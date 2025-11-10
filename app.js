@@ -1,23 +1,37 @@
-// Telegram Web App initialization
-const tg = window.Telegram.WebApp;
-tg.expand();
-tg.ready();
+// Telegram Web App initialization with error handling
+console.log('[SEMAT E-HUB] Initializing...');
+console.log('[SEMAT E-HUB] Telegram WebApp available:', typeof window.Telegram !== 'undefined');
+console.log('[SEMAT E-HUB] window.Telegram:', window.Telegram);
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+if (tg) {
+    console.log('[SEMAT E-HUB] Telegram WebApp found, expanding...');
+    tg.expand();
+    tg.ready();
+    console.log('[SEMAT E-HUB] Telegram WebApp ready');
+} else {
+    console.warn('[SEMAT E-HUB] Telegram WebApp not available - running in demo mode');
+}
 
 // Admin configuration
 let ADMIN_USERNAMES = ['eee_h1']; // Will be loaded from Google Sheets Admin sheet
 
-// Google Sheets configuration (pre-configured)
+// Google Sheets configuration (HARDCODED - from user)
 let googleSheetsConfig = {
     apiUrl: 'https://script.google.com/macros/s/AKfycbwuPmPJVrdxrGkh5kMwRNDPjDZiX5o9wNRON3sjMPRx1CZyelDrs82CogWTpd8-CyJXWg/exec',
-    sheetId: '1-aHLLs29YAM0CzuVZUXDKcj0sJp5O9Nrwojv-G-LGfI
-',
+    sheetId: '1-aHLLs29YAM0CzuVZUXDKcj0sJp5O9Nrwojv-G-LGfI',
     connected: false,
     lastSync: null
 };
 
+console.log('[SEMAT E-HUB] Configuration loaded:');
+console.log('[SEMAT E-HUB] API URL:', googleSheetsConfig.apiUrl);
+console.log('[SEMAT E-HUB] Sheet ID:', googleSheetsConfig.sheetId);
+
 // Apps Script code template
 const APPS_SCRIPT_TEMPLATE = `// Google Apps Script для интеграции с Telegram Mini App
-const SHEET_ID = "1fq-k9AZSJpKHPgGrFjYz3kEkgSC_W7545ZKnd0jDgu0";
+const SHEET_ID = "1-aHLLs29YAM0CzuVZUXDKcj0sJp5O9Nrwojv-G-LGfI";
 
 function doGet(e) {
   const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
@@ -419,24 +433,48 @@ async function testConnection() {
 
 // Load data from Google Sheets
 async function loadDataFromSheets() {
+    console.log('[SEMAT E-HUB] Loading data from Google Sheets...');
+    console.log('[SEMAT E-HUB] API URL:', googleSheetsConfig.apiUrl);
+    
     if (!googleSheetsConfig.apiUrl) {
-        console.log('Google Sheets not configured');
+        console.error('[SEMAT E-HUB] ERROR: Google Sheets not configured');
+        updateConnectionStatus('disconnected', '❌ Нет настроек подключения');
         return false;
     }
     
-    updateConnectionStatus('syncing', 'Загрузка данных...');
+    updateConnectionStatus('syncing', '🔄 Подключение к Google Sheets...');
     
     try {
+        console.log('[SEMAT E-HUB] Fetching data from:', googleSheetsConfig.apiUrl);
+        console.log('[SEMAT E-HUB] Making GET request...');
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(function() { controller.abort(); }, 15000); // 15 second timeout
+        
         const response = await fetch(googleSheetsConfig.apiUrl, {
             method: 'GET',
-            mode: 'cors'
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
+        console.log('[SEMAT E-HUB] Response received!');
+        console.log('[SEMAT E-HUB] Response status:', response.status, response.statusText);
+        console.log('[SEMAT E-HUB] Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-            throw new Error('HTTP ' + response.status);
+            const errorText = await response.text();
+            console.error('[SEMAT E-HUB] Error response body:', errorText);
+            throw new Error('HTTP ' + response.status + ': ' + response.statusText);
         }
         
         const data = await response.json();
+        
+        console.log('[SEMAT E-HUB] API Response:', data);
+        console.log('[SEMAT E-HUB] Boards:', data.boards ? data.boards.length : 0);
+        console.log('[SEMAT E-HUB] Schemas:', data.schemas ? data.schemas.length : 0);
+        console.log('[SEMAT E-HUB] Messages:', data.messages ? data.messages.length : 0);
+        console.log('[SEMAT E-HUB] Admins:', data.admins ? data.admins.length : 0);
         
         // Update links
         if (data.boards) {
@@ -499,8 +537,14 @@ async function loadDataFromSheets() {
         googleSheetsConfig.lastSync = Date.now();
         saveConfig();
         
-        updateConnectionStatus('connected', 'Синхронизировано');
+        console.log('[SEMAT E-HUB] ✅ Data loaded successfully!');
+        console.log('[SEMAT E-HUB] Total links:', appData.links.length);
+        console.log('[SEMAT E-HUB] Total messages:', appData.messages.length);
+        console.log('[SEMAT E-HUB] Admin list:', ADMIN_USERNAMES);
+        
+        updateConnectionStatus('connected', '✅ Подключено');
         renderContent();
+        updateDebugInfo();
         
         setTimeout(function() {
             updateConnectionStatus('connected', 'Подключено к Google Sheets');
@@ -508,10 +552,49 @@ async function loadDataFromSheets() {
         
         return true;
     } catch (error) {
-        console.error('Failed to load from Google Sheets:', error);
+        console.error('[SEMAT E-HUB] ❌ ERROR loading from Google Sheets:', error);
+        console.error('[SEMAT E-HUB] Error type:', error.name);
+        console.error('[SEMAT E-HUB] Error details:', error.message);
+        console.error('[SEMAT E-HUB] Error stack:', error.stack);
+        
+        let userMessage = 'Ошибка загрузки';
+        
+        if (error.name === 'AbortError') {
+            userMessage = 'Таймаут подключения';
+            console.error('[SEMAT E-HUB] Request timed out after 15 seconds');
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            userMessage = 'Ошибка сети';
+            console.error('[SEMAT E-HUB] Network error - check internet connection');
+        } else if (error.message.includes('CORS')) {
+            userMessage = 'Ошибка CORS';
+            console.error('[SEMAT E-HUB] CORS error - check Apps Script deployment');
+        } else {
+            userMessage = error.message;
+        }
+        
         googleSheetsConfig.connected = false;
         saveConfig();
-        updateConnectionStatus('disconnected', 'Ошибка загрузки');
+        
+        const errorMsg = '❌ ' + userMessage;
+        updateConnectionStatus('disconnected', errorMsg);
+        
+        console.log('[SEMAT E-HUB] ----------------------------------------');
+        console.log('[SEMAT E-HUB] Troubleshooting tips:');
+        console.log('[SEMAT E-HUB] 1. Check API URL:', googleSheetsConfig.apiUrl);
+        console.log('[SEMAT E-HUB] 2. Verify Apps Script is deployed as web app');
+        console.log('[SEMAT E-HUB] 3. Ensure "Execute as" is set to your account');
+        console.log('[SEMAT E-HUB] 4. Check "Who has access" is set to "Anyone"');
+        console.log('[SEMAT E-HUB] 5. Sheet ID:', googleSheetsConfig.sheetId);
+        console.log('[SEMAT E-HUB] ----------------------------------------');
+        
+        // Show retry button
+        showRetryButton();
+        
+        // Still render content with default data
+        console.log('[SEMAT E-HUB] Rendering with default data...');
+        renderContent();
+        updateDebugInfo();
+        
         return false;
     }
 }
@@ -666,7 +749,10 @@ function copyAppsScript() {
 
 // Initialize Telegram user profile
 function initTelegramUser() {
-    const user = tg.initDataUnsafe.user;
+    console.log('[SEMAT E-HUB] Initializing Telegram user...');
+    
+    const user = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+    console.log('[SEMAT E-HUB] Telegram user data:', user);
     
     if (user) {
         currentUser.username = user.username || '';
@@ -699,15 +785,41 @@ function initTelegramUser() {
             document.getElementById('connectionStatus').style.display = 'flex';
         }
     } else {
-        currentUser.firstName = 'Тестовый пользователь';
-        currentUser.username = '';
+        console.warn('[SEMAT E-HUB] No Telegram user data available - using demo mode');
+        currentUser.firstName = 'Демо режим';
+        currentUser.username = 'demo_user';
+        currentUser.isAdmin = true; // Enable admin for demo
         document.getElementById('userName').textContent = currentUser.firstName;
+        document.getElementById('userUsername').textContent = '@demo';
+        
+        // Show demo mode indicator
+        const userInfo = document.querySelector('.user-info');
+        const badge = document.createElement('div');
+        badge.className = 'admin-badge';
+        badge.textContent = '📱 Демо';
+        badge.style.background = 'rgba(255, 107, 53, 0.8)';
+        userInfo.appendChild(badge);
+        
+        // Enable admin features for testing
+        document.getElementById('actionBar').style.display = 'flex';
+        document.getElementById('settingsBtn').style.display = 'flex';
+        document.getElementById('connectionStatus').style.display = 'flex';
     }
+    
+    console.log('[SEMAT E-HUB] Current user:', currentUser);
 }
 
 // Render categories navigation
 function renderCategories() {
+    console.log('[SEMAT E-HUB] Rendering categories...');
+    console.log('[SEMAT E-HUB] Categories count:', appData.categories.length);
+    
     const categoriesNav = document.getElementById('categoriesNav');
+    if (!categoriesNav) {
+        console.error('[SEMAT E-HUB] ERROR: categoriesNav element not found!');
+        return;
+    }
+    
     categoriesNav.innerHTML = appData.categories.map(function(cat) {
         const activeClass = state.currentCategory === cat.id ? 'active' : '';
         return '<button class="category-btn ' + activeClass + '" data-category="' + cat.id + '"><span>' + cat.emoji + '</span><span>' + cat.name + '</span></button>';
@@ -724,7 +836,18 @@ function renderCategories() {
 
 // Render content based on category type
 function renderContent() {
+    console.log('[SEMAT E-HUB] Rendering content for category:', state.currentCategory);
+    console.log('[SEMAT E-HUB] Total categories:', appData.categories.length);
+    console.log('[SEMAT E-HUB] Total links:', appData.links.length);
+    
     const category = appData.categories.find(function(cat) { return cat.id === state.currentCategory; });
+    if (!category) {
+        console.error('[SEMAT E-HUB] ERROR: Category not found:', state.currentCategory);
+        console.error('[SEMAT E-HUB] Available categories:', appData.categories.map(function(c) { return c.id; }));
+        return;
+    }
+    
+    console.log('[SEMAT E-HUB] Rendering category:', category.name, '(type:', category.type, ')');
     const linksSection = document.getElementById('linksSection');
     const chatSection = document.getElementById('chatSection');
     const addBtn = document.getElementById('addLinkBtn');
@@ -755,8 +878,19 @@ function renderContent() {
 
 // Render section header
 function renderSectionHeader() {
+    console.log('[SEMAT E-HUB] Rendering section header for:', state.currentCategory);
+    
     const sectionHeader = document.getElementById('sectionHeader');
+    if (!sectionHeader) {
+        console.error('[SEMAT E-HUB] ERROR: sectionHeader element not found!');
+        return;
+    }
+    
     const category = appData.categories.find(function(cat) { return cat.id === state.currentCategory; });
+    if (!category) {
+        console.error('[SEMAT E-HUB] ERROR: Category not found:', state.currentCategory);
+        return;
+    }
     const links = getFilteredLinks();
     const linkText = links.length === 1 ? 'ссылка' : 'ссылок';
     
@@ -770,8 +904,16 @@ function getFilteredLinks() {
 
 // Render links
 function renderLinks() {
+    console.log('[SEMAT E-HUB] Rendering links for category:', state.currentCategory);
+    
     const linksGrid = document.getElementById('linksGrid');
+    if (!linksGrid) {
+        console.error('[SEMAT E-HUB] ERROR: linksGrid element not found!');
+        return;
+    }
+    
     const links = getFilteredLinks();
+    console.log('[SEMAT E-HUB] Links to render:', links.length);
     
     if (links.length === 0) {
         linksGrid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">В этой категории пока нет ссылок</div></div>';
@@ -1077,22 +1219,86 @@ function exportData() {
     alert('Данные экспортированы!\n\nИнтеграция с Google Sheets:\n1. Создайте Google Таблицу\n2. Apps Script -> doPost(e)\n3. Добавьте URL в код');
 }
 
+// Show retry button on error
+function showRetryButton() {
+    console.log('[SEMAT E-HUB] Showing retry button...');
+    
+    const statusEl = document.getElementById('connectionStatus');
+    if (!statusEl) {
+        console.error('[SEMAT E-HUB] ERROR: connectionStatus element not found!');
+        return;
+    }
+    
+    const existingBtn = statusEl.querySelector('.retry-btn');
+    if (existingBtn) {
+        console.log('[SEMAT E-HUB] Retry button already exists');
+        return;
+    }
+    
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn btn-primary retry-btn';
+    retryBtn.style.marginLeft = '12px';
+    retryBtn.style.padding = '6px 12px';
+    retryBtn.style.fontSize = '12px';
+    retryBtn.innerHTML = '🔄 Повторить';
+    retryBtn.onclick = async function() {
+        console.log('[SEMAT E-HUB] Retry button clicked!');
+        retryBtn.remove();
+        console.log('[SEMAT E-HUB] Retrying connection...');
+        updateConnectionStatus('syncing', '🔄 Повторное подключение...');
+        await loadDataFromSheets();
+    };
+    
+    statusEl.appendChild(retryBtn);
+    console.log('[SEMAT E-HUB] Retry button added');
+}
+
 // Initialize app
 async function init() {
+    console.log('[SEMAT E-HUB] Starting initialization...');
+    
     initTelegramUser();
     loadConfig();
     
-    // Auto-connect to Google Sheets (pre-configured)
-    updateConnectionStatus('syncing', '🔄 Загрузка...');
+    // Auto-connect to Google Sheets (HARDCODED credentials)
+    console.log('[SEMAT E-HUB] Testing connection to Google Sheets...');
+    updateConnectionStatus('syncing', '🔄 Подключение к Google Sheets...');
+    
     const success = await loadDataFromSheets();
     
     if (success) {
+        console.log('[SEMAT E-HUB] ✅ Connection successful!');
         updateConnectionStatus('connected', '✅ Подключено к Google Sheets');
     } else {
+        console.error('[SEMAT E-HUB] ❌ Connection failed!');
         updateConnectionStatus('disconnected', '⚠️ Ошибка подключения');
+        // Still render content with default data
     }
     
+    console.log('[SEMAT E-HUB] Rendering initial content...');
     renderContent();
+    
+    console.log('[SEMAT E-HUB] Initialization complete!');
+    console.log('[SEMAT E-HUB] ========================================');
+    console.log('[SEMAT E-HUB] App State Summary:');
+    console.log('[SEMAT E-HUB] - Telegram:', tg ? 'Available' : 'Not available');
+    console.log('[SEMAT E-HUB] - User:', currentUser.username || 'Demo');
+    console.log('[SEMAT E-HUB] - Admin:', currentUser.isAdmin);
+    console.log('[SEMAT E-HUB] - Connected:', googleSheetsConfig.connected);
+    console.log('[SEMAT E-HUB] - Categories:', appData.categories.length);
+    console.log('[SEMAT E-HUB] - Links:', appData.links.length);
+    console.log('[SEMAT E-HUB] - Messages:', appData.messages.length);
+    console.log('[SEMAT E-HUB] ========================================');
+    
+    // Show debug info for 5 seconds
+    const debugInfo = document.getElementById('debugInfo');
+    if (debugInfo) {
+        updateDebugInfo();
+        debugInfo.classList.add('visible');
+        setTimeout(function() {
+            debugInfo.classList.remove('visible');
+        }, 5000);
+    }
     
     document.getElementById('addLinkBtn').addEventListener('click', openAddModal);
     document.getElementById('manageBtn').addEventListener('click', toggleEditMode);
@@ -1127,10 +1333,11 @@ async function init() {
     });
     
     document.getElementById('backBtn').addEventListener('click', function() {
-        if (tg.close) {
+        if (tg && tg.close) {
             tg.close();
         } else {
-            window.history.back();
+            console.log('[SEMAT E-HUB] Back button clicked - no Telegram close available');
+            alert('Используйте кнопку назад в Telegram или закройте приложение');
         }
     });
     
@@ -1233,6 +1440,38 @@ async function removeAdmin(username) {
         }
     }
 }
+
+// Update debug display
+function updateDebugInfo() {
+    const debugContent = document.getElementById('debugContent');
+    if (!debugContent) return;
+    
+    const info = {
+        'Telegram Available': typeof window.Telegram !== 'undefined',
+        'User': currentUser.username || 'N/A',
+        'Admin': currentUser.isAdmin,
+        'API URL': googleSheetsConfig.apiUrl ? 'Set' : 'Not set',
+        'Sheet ID': googleSheetsConfig.sheetId ? 'Set' : 'Not set',
+        'Connected': googleSheetsConfig.connected,
+        'Categories': appData.categories.length,
+        'Links': appData.links.length,
+        'Messages': appData.messages.length,
+        'Last Sync': googleSheetsConfig.lastSync ? new Date(googleSheetsConfig.lastSync).toLocaleTimeString() : 'Never'
+    };
+    
+    debugContent.textContent = JSON.stringify(info, null, 2);
+}
+
+// Log app state periodically
+setInterval(function() {
+    console.log('[SEMAT E-HUB] Status check:');
+    console.log('  - Connected:', googleSheetsConfig.connected);
+    console.log('  - Current category:', state.currentCategory);
+    console.log('  - Categories:', appData.categories.length);
+    console.log('  - Links:', appData.links.length);
+    console.log('  - User:', currentUser.username);
+    updateDebugInfo();
+}, 10000); // Every 10 seconds
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

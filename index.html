@@ -713,6 +713,12 @@
             background: rgba(0, 212, 255, 0.1);
             color: var(--accent-blue);
             border-bottom-color: var(--accent-blue);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .connection-status.disconnected {
@@ -915,6 +921,10 @@
             color: var(--primary-bg);
             box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
         }
+        
+        .retry-btn {
+            animation: fadeIn 0.3s ease;
+        }
 
         .btn-export:hover {
             background: #19a045;
@@ -1004,6 +1014,41 @@
             background: #00b8e6;
             box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
         }
+        
+        /* Debug info display */
+        .debug-info {
+            position: fixed;
+            bottom: 100px;
+            right: 16px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            max-width: 300px;
+            z-index: 999;
+            display: none;
+        }
+        
+        .debug-info.visible {
+            display: block;
+        }
+        
+        .debug-info h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: var(--accent-blue);
+        }
+        
+        .debug-info pre {
+            margin: 4px 0;
+            padding: 4px;
+            background: var(--primary-bg);
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1023,9 +1068,9 @@
     </header>
 
     <!-- Connection Status -->
-    <div class="connection-status" id="connectionStatus" style="display: flex; padding: 12px 16px; background: var(--secondary-bg); border-bottom: 1px solid var(--border-color); align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
+    <div class="connection-status syncing" id="connectionStatus" style="display: flex; padding: 12px 16px; background: rgba(0, 212, 255, 0.1); border-bottom: 1px solid var(--accent-blue); align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
         <span id="connectionIcon">🔄</span>
-        <span id="connectionText">Загрузка...</span>
+        <span id="connectionText">🔄 Подключение к Google Sheets...</span>
     </div>
 
     <!-- Main Container -->
@@ -1209,6 +1254,12 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <!-- Debug Info (hidden by default, visible in console) -->
+    <div class="debug-info" id="debugInfo">
+        <h4>🔍 Debug Info</h4>
+        <pre id="debugContent"></pre>
     </div>
 
     <script src="app.js"></script>
