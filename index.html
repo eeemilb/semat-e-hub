@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMAT E-HUB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f1419;
+            --secondary-bg: #1a2332;
+            --accent: #00d4ff;
+            --accent-secondary: #1db954;
+            --text: #e8e8e8;
+            --text-muted: #8a8a8a;
+            --border: rgba(0, 212, 255, 0.15);
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Background Animation */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            opacity: 0.1;
+        }
+
+        .bg-circle:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            left: -100px;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-circle:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            right: -50px;
+            animation: float 25s infinite ease-in-out 2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(180deg, var(--secondary-bg) 0%, rgba(26, 35, 50, 0.8) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            position: relative;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+            letter-spacing: -0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 212, 255, 0.08);
+            padding: 6px 12px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .admin-badge {
+            font-size: 10px;
+            color: #ff9500;
+            font-weight: 600;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, rgba(29, 185, 84, 0.05) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
+            position: relative;
+            min-height: 40px;
+        }
+
+        .status-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent);
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--secondary-bg);
+            z-index: 40;
+            position: relative;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: var(--accent);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Main Content */
+        .main-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .tab-pane {
+            display: none;
+            padding: 16px;
+        }
+
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .card-emoji {
+            font-size: 18px;
+            min-width: 24px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-left: 34px;
+        }
+
+        /* Chat */
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            background: var(--secondary-bg);
+            border-left: 3px solid var(--accent-secondary);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-header {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .message-user {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .message-time {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .message-text {
+            font-size: 13px;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        /* Chat Input */
+        .chat-input-box {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--secondary-bg);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--primary-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .send-btn {
+            background: var(--accent-secondary);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #17a34a;
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Empty State */
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 13px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.4);
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+            .user-info { display: none; }
+            .nav-tab { font-size: 12px; padding: 10px 12px; }
+            .main-container { padding: 0; }
+            .tab-pane { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="bg-animation">
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-left">
+            <div class="logo">🔌 SEMAT</div>
+        </div>
+        <div class="header-right">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <div class="user-info">
+                <div class="user-name" id="userName">Загрузка</div>
+                <div class="admin-badge" id="adminBadge" style="display: none;">ADMIN</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Status -->
+    <div class="status-bar" id="statusBar">
+        <span class="status-spinner"></span>
+        <span>Подключение...</span>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="resources">📚 Ресурсы</button>
+        <button class="nav-tab" data-tab="schemas">⚡ Схемы</button>
+        <button class="nav-tab" data-tab="chat">💬 Чат</button>
+    </div>
+
+    <!-- Content -->
+    <div class="main-container">
+        <!-- Resources Tab -->
+        <div class="tab-pane active" id="resources">
+            <div id="resourcesList"></div>
+        </div>
+
+        <!-- Schemas Tab -->
+        <div class="tab-pane" id="schemas">
+            <div id="schemasList"></div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div class="tab-pane" id="chat">
+            <div id="messagesList" class="messages-list"></div>
+            <div class="chat-input-box">
+                <input type="text" class="chat-input" id="msgInput" placeholder="Сообщение...">
+                <button class="send-btn" id="sendBtn">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIG ==========
+        const API_URL = "https://script.google.com/macros/s/AKfycbzkTen_kZ0OEvRhAQ1MffccssA6mQoQIdpEnVgSsEzXHmagI6oojBmJAOFRioqAv1gkQw/exec";
+        const ADMIN_USER = "eee_h1";
+
+        let state = {
+            user: null,
+            isAdmin: false,
+            data: { boards: [], schemas: [], messages: [], admins: [] }
+        };
+
+        // ========== TELEGRAM ==========
+        function getTelegramUser() {
+            try {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const tgData = params.get('tgWebAppData');
+                if (!tgData) return null;
+                const data = new URLSearchParams(tgData);
+                const user = JSON.parse(data.get('user'));
+                return user;
+            } catch (e) {
+                console.error("Telegram parse error:", e);
+                return null;
+            }
+        }
+
+        function initUser() {
+            let user = getTelegramUser();
+            if (!user) {
+                user = { id: 0, first_name: "User", username: "user" };
+            }
+            state.user = {
+                id: user.id,
+                name: user.first_name || user.username,
+                username: user.username,
+                photo: user.photo_url
+            };
+            renderUser();
+        }
+
+        function renderUser() {
+            document.getElementById("userName").textContent = state.user.name;
+            const avatar = document.getElementById("userAvatar");
+            if (state.user.photo) {
+                avatar.innerHTML = `<img src="${state.user.photo}" alt="">`;
+            } else {
+                avatar.textContent = state.user.name[0].toUpperCase();
+            }
+            if (state.isAdmin) {
+                document.getElementById("adminBadge").style.display = "block";
+            }
+        }
+
+        // ========== STATUS ==========
+        function setStatus(text, error = false) {
+            const bar = document.getElementById("statusBar");
+            if (error) {
+                bar.innerHTML = `<span>❌ ${text}</span>`;
+                bar.classList.add("status-error");
+            } else {
+                bar.innerHTML = `<span class="status-spinner"></span><span>${text}</span>`;
+                bar.classList.remove("status-error");
+            }
+        }
+
+        // ========== API ==========
+        async function fetchData() {
+            try {
+                setStatus("Загрузка данных...");
+                const res = await fetch(API_URL + "?t=" + Date.now(), { mode: "cors" });
+                const data = await res.json();
+                state.data = data;
+
+                // Check admin
+                if (state.user.username) {
+                    state.isAdmin = (data.admins || []).some(a => 
+                        a.username?.toLowerCase() === state.user.username.toLowerCase()
+                    );
+                }
+
+                setStatus("✅ Готово");
+                renderAll();
+            } catch (e) {
+                console.error("API Error:", e);
+                setStatus("Ошибка подключения", true);
+                renderEmpty();
+            }
+        }
+
+        async function sendMessage(text) {
+            if (!text.trim()) return;
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    mode: "cors",
+                    body: JSON.stringify({
+                        action: "addMessage",
+                        username: state.user.username,
+                        message: text
+                    })
+                });
+                document.getElementById("msgInput").value = "";
+                setTimeout(fetchData, 300);
+            } catch (e) {
+                alert("Ошибка отправки");
+            }
+        }
+
+        // ========== RENDER ==========
+        function renderAll() {
+            renderResources();
+            renderSchemas();
+            renderMessages();
+        }
+
+        function renderResources() {
+            const list = document.getElementById("resourcesList");
+            const items = state.data.boards || [];
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет ресурсов</div></div>';
+                return;
+            }
+            list.innerHTML = items.map(item => `
+                <div class="card" onclick="window.open('${item.url}', '_blank')">
+                    <div class="card-header">
+                        <div class="card-emoji">${item.emoji || "📌"}</div>
+                        <div class="card-title">${item.title}</div>
+                    </div>
+                    <div class="card-desc">${item.description || ""}</div>
+                </div>
+            `).join("");
+        }
+
+        function renderSchemas() {
+            const list = document.getElementById("schemasList");
+            const items = state.data.schemas || [];
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет схем</div></div>';
+                return;
+            }
+            list.innerHTML = items.map(item => `
+                <div class="card" onclick="window.open('${item.url}', '_blank')">
+                    <div class="card-header">
+                        <div class="card-emoji">${item.emoji || "⚡"}</div>
+                        <div class="card-title">${item.title}</div>
+                    </div>
+                    <div class="card-desc">${item.description || ""}</div>
+                </div>
+            `).join("");
+        }
+
+        function renderMessages() {
+            const list = document.getElementById("messagesList");
+            const items = state.data.messages || [];
+            if (items.length === 0) {
+                list.innerHTML = '<div class="empty" style="padding: 20px;"><div class="empty-icon">💬</div><div class="empty-text">Нет сообщений</div></div>';
+                return;
+            }
+            list.innerHTML = items.map(msg => {
+                const time = new Date(parseInt(msg.timestamp)).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
+                return `
+                    <div class="message">
+                        <div class="message-avatar">${msg.username[0].toUpperCase()}</div>
+                        <div class="message-body">
+                            <div class="message-header">
+                                <div class="message-user">@${msg.username}</div>
+                                <div class="message-time">${time}</div>
+                            </div>
+                            <div class="message-text">${msg.message}</div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderEmpty() {
+            document.getElementById("resourcesList").innerHTML = '<div class="empty"><div class="empty-icon">❌</div><div class="empty-text">Ошибка загрузки</div></div>';
+            document.getElementById("schemasList").innerHTML = '<div class="empty"><div class="empty-icon">❌</div><div class="empty-text">Ошибка загрузки</div></div>';
+        }
+
+        // ========== EVENTS ==========
+        document.querySelectorAll(".nav-tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
+                document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+                btn.classList.add("active");
+                document.getElementById(btn.dataset.tab).classList.add("active");
+            });
+        });
+
+        document.getElementById("sendBtn").addEventListener("click", () => {
+            sendMessage(document.getElementById("msgInput").value);
+        });
+
+        document.getElementById("msgInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage(e.target.value);
+        });
+
+        // ========== INIT ==========
+        async function init() {
+            initUser();
+            await fetchData();
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
