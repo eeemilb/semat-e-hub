@@ -33,12 +33,6 @@
             100% { transform: translateY(0px) translateX(0px); opacity: 0.1; }
         }
 
-        @keyframes particle-move {
-            0% { transform: translate(0, 0); opacity: 0.3; }
-            50% { transform: translate(20px, -20px); opacity: 0.6; }
-            100% { transform: translate(0, 0); opacity: 0.3; }
-        }
-
         .background-animation {
             position: fixed;
             top: 0;
@@ -99,6 +93,8 @@
             justify-content: center;
             font-size: 0.7em;
             overflow: hidden;
+            color: white;
+            font-weight: bold;
         }
 
         .user-avatar img {
@@ -125,11 +121,6 @@
             50% { opacity: 0.5; }
         }
 
-        .container {
-            max-width: 100%;
-            padding: 0;
-        }
-
         .status-bar {
             text-align: center;
             padding: 15px;
@@ -141,6 +132,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 10px;
         }
 
         .loading {
@@ -151,7 +143,6 @@
             border-top: 2px solid transparent;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-right: 10px;
             vertical-align: middle;
         }
 
@@ -165,6 +156,7 @@
             background: rgba(255, 107, 53, 0.1);
             padding: 15px;
             border-left: 3px solid #ff6b35;
+            font-size: 0.9em;
         }
 
         .tabs {
@@ -185,7 +177,6 @@
             color: #999999;
             font-size: 0.9em;
             transition: all 0.3s ease;
-            position: relative;
             font-weight: 500;
         }
 
@@ -228,7 +219,6 @@
             margin-bottom: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
         }
 
         .link-card:hover {
@@ -284,6 +274,8 @@
             justify-content: center;
             font-size: 0.8em;
             flex-shrink: 0;
+            color: white;
+            font-weight: bold;
         }
 
         .message-content {
@@ -351,10 +343,6 @@
         .send-btn:hover {
             background: #17a34a;
             box-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
-        }
-
-        button {
-            font-family: inherit;
         }
 
         .footer {
@@ -483,36 +471,71 @@
             admins: []
         };
 
-        // Initialize Telegram Web App
-        function initTelegram() {
-            console.log("[SEMAT] Инициализация Telegram WebApp...");
+        // Parse Telegram data from URL hash
+        function parseTelegramData() {
+            console.log("[SEMAT] Парсинг Telegram данных из URL...");
 
-            if (window.Telegram && window.Telegram.WebApp) {
-                const tg = window.Telegram.WebApp;
-                tg.ready();
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const tgWebAppData = params.get('tgWebAppData');
 
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    console.log("[SEMAT] Пользователь Telegram:", user);
-                    appState.user = {
-                        id: user.id,
-                        username: user.username,
-                        firstName: user.first_name,
-                        photoUrl: user.photo_url
-                    };
-                    displayUserProfile();
-                    return true;
-                }
+            if (!tgWebAppData) {
+                console.log("[SEMAT] tgWebAppData не найдена");
+                return null;
             }
 
-            console.log("[SEMAT] Telegram WebApp не доступен");
+            const data = new URLSearchParams(tgWebAppData);
+            const userStr = data.get('user');
+
+            if (!userStr) {
+                console.log("[SEMAT] user не найден");
+                return null;
+            }
+
+            try {
+                const user = JSON.parse(userStr);
+                console.log("[SEMAT] Пользователь Telegram получен:", user);
+                return user;
+            } catch (e) {
+                console.log("[SEMAT] Ошибка парсинга user:", e);
+                return null;
+            }
+        }
+
+        // Initialize Telegram Web App
+        function initTelegram() {
+            console.log("[SEMAT] Инициализация Telegram...");
+
+            // Try parsing from URL hash first (works in Telegram)
+            let user = parseTelegramData();
+
+            // Fallback to Telegram Web App API
+            if (!user && window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                user = tg.initDataUnsafe?.user;
+                console.log("[SEMAT] Пользователь из Telegram WebApp:", user);
+            }
+
+            // Fallback to demo user
+            if (!user) {
+                console.log("[SEMAT] Используем demo пользователя");
+                user = {
+                    id: 0,
+                    first_name: "Demo",
+                    username: "demo_user"
+                };
+            }
+
             appState.user = {
-                username: "demo_user",
-                firstName: "Демо",
-                id: 0
+                id: user.id,
+                username: user.username || "anonymous",
+                firstName: user.first_name || "Пользователь",
+                photoUrl: user.photo_url
             };
+
+            console.log("[SEMAT] Пользователь инициализирован:", appState.user);
             displayUserProfile();
-            return false;
         }
 
         // Display user profile
@@ -523,17 +546,21 @@
             const avatarEl = document.getElementById("userAvatar");
             const adminBadgeEl = document.getElementById("adminBadge");
 
-            nameEl.textContent = appState.user.firstName || appState.user.username || "Пользователь";
+            const displayName = appState.user.firstName || appState.user.username || "Пользователь";
+            nameEl.textContent = displayName;
 
             if (appState.user.photoUrl) {
                 avatarEl.innerHTML = `<img src="${appState.user.photoUrl}" alt="avatar">`;
             } else {
-                avatarEl.textContent = (appState.user.firstName || "?")[0].toUpperCase();
+                const initial = (appState.user.firstName || appState.user.username || "?")[0].toUpperCase();
+                avatarEl.textContent = initial;
             }
 
             if (appState.isAdmin) {
                 adminBadgeEl.style.display = "inline-block";
             }
+
+            console.log("[SEMAT] Профиль отображён");
         }
 
         // Update status bar
@@ -546,15 +573,25 @@
                 statusBar.className = "status-bar";
                 statusBar.innerHTML = message;
             }
-            console.log("[SEMAT]", message);
+            console.log("[SEMAT]", message.replace(/<[^>]*>/g, ''));
         }
 
-        // Fetch data from Google Sheets
+        // Fetch data from Google Sheets with CORS workaround
         async function fetchData() {
             try {
                 updateStatus('<span class="loading"></span> 📡 Подключение к Google Sheets...');
 
-                const response = await fetch(CONFIG.API_URL);
+                console.log("[SEMAT] Отправляю запрос к API...");
+                console.log("[SEMAT] URL:", CONFIG.API_URL);
+
+                const response = await fetch(CONFIG.API_URL, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
                 console.log("[SEMAT] Ответ статус:", response.status);
 
                 if (!response.ok) {
@@ -569,10 +606,17 @@
                 appState.messages = data.messages || [];
                 appState.admins = data.admins || [];
 
+                console.log("[SEMAT] Платы:", appState.boards.length);
+                console.log("[SEMAT] Схемы:", appState.schemas.length);
+                console.log("[SEMAT] Сообщения:", appState.messages.length);
+                console.log("[SEMAT] Админы:", appState.admins.length);
+
                 // Check if admin
                 if (appState.user && appState.user.username) {
-                    appState.isAdmin = appState.admins.some(admin => admin.username === appState.user.username);
-                    console.log("[SEMAT] Статус админа:", appState.isAdmin);
+                    appState.isAdmin = appState.admins.some(admin => 
+                        admin.username && admin.username.toLowerCase() === appState.user.username.toLowerCase()
+                    );
+                    console.log("[SEMAT] Проверка админа '" + appState.user.username + "':", appState.isAdmin);
                 }
 
                 updateStatus('✅ Подключено к Google Sheets');
@@ -580,9 +624,7 @@
 
             } catch (error) {
                 console.error("[SEMAT] Ошибка:", error);
-                updateStatus(`❌ Ошибка подключения: ${error.message}`, true);
-
-                // Fallback - show empty state
+                updateStatus(`❌ Ошибка: ${error.message}`, true);
                 displayEmptyContent();
             }
         }
@@ -598,7 +640,7 @@
         function displayBoards() {
             const container = document.getElementById("boardsList");
 
-            if (appState.boards.length === 0) {
+            if (!appState.boards || appState.boards.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>Нет платформ</div>';
                 return;
             }
@@ -612,13 +654,15 @@
                     <div class="link-description">${board.description || ''}</div>
                 </div>
             `).join('');
+
+            console.log("[SEMAT] Платы отображены");
         }
 
         // Display schemas
         function displaySchemas() {
             const container = document.getElementById("schemasList");
 
-            if (appState.schemas.length === 0) {
+            if (!appState.schemas || appState.schemas.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>Нет схем</div>';
                 return;
             }
@@ -632,37 +676,43 @@
                     <div class="link-description">${schema.description || ''}</div>
                 </div>
             `).join('');
+
+            console.log("[SEMAT] Схемы отображены");
         }
 
         // Display messages
         function displayMessages() {
             const container = document.getElementById("messagesList");
 
-            if (appState.messages.length === 0) {
+            if (!appState.messages || appState.messages.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div>Нет сообщений. Будьте первым!</div>';
                 return;
             }
 
-            container.innerHTML = appState.messages.map(msg => `
-                <div class="chat-message">
-                    <div class="message-avatar">${msg.username[0].toUpperCase()}</div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <span class="message-username">@${msg.username}</span>
-                            <span class="message-time">${new Date(parseInt(msg.timestamp)).toLocaleTimeString()}</span>
-                        </div>
-                        <div class="message-text">${msg.message}</div>
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = appState.messages.map(msg => {
+                const time = new Date(parseInt(msg.timestamp));
+                const timeStr = time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
+                return `
+                    <div class="chat-message">
+                        <div class="message-avatar">${(msg.username || '?')[0].toUpperCase()}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-username">@${msg.username}</span>
+                                <span class="message-time">${timeStr}</span>
+                            </div>
+                            <div class="message-text">${msg.message}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            console.log("[SEMAT] Сообщения отображены");
         }
 
         // Display empty content
         function displayEmptyContent() {
-            document.getElementById("boardsList").innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div>Ошибка загрузки данных</div>';
+            document.getElementById("boardsList").innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div>Ошибка загрузки данных. Проверьте консоль (F12)</div>';
             document.getElementById("schemasList").innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div>Ошибка загрузки данных</div>';
         }
 
@@ -680,6 +730,11 @@
             try {
                 await fetch(CONFIG.API_URL, {
                     method: "POST",
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         action: "addMessage",
                         username: appState.user.username || "Anonymous",
@@ -689,11 +744,11 @@
                 });
 
                 input.value = "";
-                await fetchData(); // Reload
+                await fetchData();
 
             } catch (error) {
-                console.error("Ошибка отправки:", error);
-                alert("Ошибка отправки сообщения");
+                console.error("[SEMAT] Ошибка отправки:", error);
+                alert("Ошибка отправки сообщения: " + error.message);
             }
         }
 
@@ -709,7 +764,7 @@
             });
         });
 
-        // Send button
+        // Send button and Enter key
         document.getElementById("sendBtn").addEventListener("click", sendMessage);
         document.getElementById("messageInput").addEventListener("keypress", (e) => {
             if (e.key === "Enter") sendMessage();
@@ -717,18 +772,25 @@
 
         // Initialize app
         async function init() {
-            console.log("[SEMAT] Запуск приложения...");
+            console.log("[SEMAT] ===== ЗАПУСК SEMAT E-HUB =====");
             console.log("[SEMAT] Sheet ID:", CONFIG.SHEET_ID);
             console.log("[SEMAT] API URL:", CONFIG.API_URL);
+            console.log("[SEMAT] URL страницы:", window.location.href);
 
             initTelegram();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for display
             await fetchData();
 
-            console.log("[SEMAT] Приложение готово!");
+            console.log("[SEMAT] ===== ПРИЛОЖЕНИЕ ГОТОВО =====");
         }
 
-        // Start app when DOM is ready
-        document.addEventListener("DOMContentLoaded", init);
+        // Start app
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
         window.addEventListener("load", () => {
             console.log("[SEMAT] Страница полностью загружена");
         });
