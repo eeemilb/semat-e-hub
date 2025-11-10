@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMAT E-HUB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f35 100%);
+            color: #e8e8e8;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* BACKGROUND ANIMATION */
+        @keyframes float-shape {
+            0% { transform: translateY(0px) translateX(0px); opacity: 0.1; }
+            50% { transform: translateY(-20px) translateX(10px); opacity: 0.2; }
+            100% { transform: translateY(0px) translateX(0px); opacity: 0.1; }
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .shape-1 { width: 300px; height: 300px; top: -100px; left: -100px; border: 2px solid #00d4ff; border-radius: 50%; animation: float-shape 15s ease-in-out infinite; }
+        .shape-2 { width: 200px; height: 200px; top: 20%; right: -50px; border: 2px solid #1db954; animation: float-shape 20s ease-in-out infinite 2s; }
+        .shape-3 { width: 150px; height: 150px; bottom: 10%; left: 10%; border: 3px solid #ff6b35; border-radius: 50%; animation: float-shape 18s ease-in-out infinite 4s; }
+
+        header {
+            background: rgba(26, 31, 53, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #1db954;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            overflow: hidden;
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 0.9em;
+            color: #e8e8e8;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1db954;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-bar {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.05);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            font-size: 0.9em;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #00d4ff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+            padding: 15px;
+            border-left: 3px solid #ff6b35;
+            font-size: 0.9em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            background: rgba(26, 31, 53, 0.8);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            padding: 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #999999;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .tab.active {
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            border-bottom: 3px solid #00d4ff;
+        }
+
+        .content {
+            padding: 0;
+            min-height: 400px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .link-card {
+            background: rgba(26, 31, 53, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .link-card:hover {
+            background: rgba(26, 31, 53, 0.95);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .link-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .link-emoji {
+            font-size: 1.5em;
+            min-width: 30px;
+        }
+
+        .link-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #00d4ff;
+            flex: 1;
+        }
+
+        .link-description {
+            color: #999999;
+            font-size: 0.85em;
+            line-height: 1.4;
+            margin-left: 42px;
+        }
+
+        .chat-message {
+            background: rgba(26, 31, 53, 0.6);
+            border-left: 3px solid #1db954;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #1db954;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            flex-shrink: 0;
+            color: white;
+            font-weight: bold;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+
+        .message-username {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .message-time {
+            color: #666666;
+            font-size: 0.8em;
+        }
+
+        .message-text {
+            color: #e8e8e8;
+            word-break: break-word;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            background: rgba(26, 31, 53, 0.8);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(26, 31, 53, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+            padding: 10px 15px;
+            color: #e8e8e8;
+            font-size: 0.9em;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+
+        .send-btn {
+            background: #1db954;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background: #17a34a;
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #666666;
+            font-size: 0.85em;
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            background: rgba(26, 31, 53, 0.8);
+        }
+
+        .admin-badge {
+            display: inline-block;
+            background: #ff6b35;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666666;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 600px) {
+            .logo { font-size: 1.2em; }
+            .tab { font-size: 0.8em; padding: 12px 8px; }
+            .user-name { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="background-animation">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">🔌 SEMAT E-HUB</div>
+        <div class="user-profile">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <div>
+                <div class="user-name" id="userName">Загрузка...</div>
+                <span class="admin-badge" id="adminBadge" style="display: none;">👑 Admin</span>
+            </div>
+            <div class="status-indicator"></div>
+        </div>
+    </header>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+        <span class="loading"></span>
+        <span>🔄 Подключение к Google Sheets...</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-tab="boards">🔌 Платы</button>
+        <button class="tab" data-tab="schemas">📊 Схемы</button>
+        <button class="tab" data-tab="communication">💬 Коммуникация</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <div class="tab-content active" id="boards-content">
+            <div id="boardsList"></div>
+        </div>
+        <div class="tab-content" id="schemas-content">
+            <div id="schemasList"></div>
+        </div>
+        <div class="tab-content" id="communication-content">
+            <div id="messagesList"></div>
+            <div class="chat-input-group">
+                <input type="text" class="chat-input" id="messageInput" placeholder="Введите сообщение...">
+                <button class="send-btn" id="sendBtn">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        SEMAT E-HUB v1.0 | Электроэрозионная обработка
+    </div>
+
+    <script>
+        // ===== CONFIG =====
+        const CONFIG = {
+            SHEET_ID: "1-aHLLs29YAM0CzuVZUXDKcj0sJp5O9Nrwojv-G-LGfI",
+            API_URL: "https://script.google.com/macros/s/AKfycbzkTen_kZ0OEvRhAQ1MffccssA6mQoQIdpEnVgSsEzXHmagI6oojBmJAOFRioqAv1gkQw/exec",
+            ADMIN_USERNAME: "eee_h1"
+        };
+
+        let appState = {
+            user: null,
+            isAdmin: false,
+            boards: [],
+            schemas: [],
+            messages: [],
+            admins: []
+        };
+
+        // Parse Telegram data from URL hash
+        function parseTelegramData() {
+            console.log("[SEMAT] Парсинг Telegram данных...");
+
+            try {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const tgWebAppData = params.get('tgWebAppData');
+
+                if (!tgWebAppData) {
+                    console.log("[SEMAT] tgWebAppData не найдена в URL");
+                    return null;
+                }
+
+                const data = new URLSearchParams(tgWebAppData);
+                const userStr = data.get('user');
+
+                if (!userStr) {
+                    console.log("[SEMAT] user не найден");
+                    return null;
+                }
+
+                const user = JSON.parse(userStr);
+                console.log("[SEMAT] ✅ Пользователь Telegram:", user);
+                return user;
+            } catch (e) {
+                console.error("[SEMAT] Ошибка парсинга Telegram:", e);
+                return null;
+            }
+        }
+
+        // Initialize
+        function initTelegram() {
+            console.log("[SEMAT] Инициализация Telegram...");
+
+            let user = parseTelegramData();
+
+            if (!user && window.Telegram?.WebApp) {
+                console.log("[SEMAT] Пробуем Telegram WebApp API...");
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                user = tg.initDataUnsafe?.user;
+            }
+
+            if (!user) {
+                console.log("[SEMAT] Используем demo режим");
+                user = {
+                    id: 641982385,
+                    first_name: "Эмиль",
+                    username: "eee_h1"
+                };
+            }
+
+            appState.user = {
+                id: user.id,
+                username: user.username || "anonymous",
+                firstName: user.first_name || "Пользователь",
+                photoUrl: user.photo_url
+            };
+
+            console.log("[SEMAT] ✅ Пользователь:", appState.user);
+            displayUserProfile();
+        }
+
+        // Display user
+        function displayUserProfile() {
+            if (!appState.user) return;
+
+            document.getElementById("userName").textContent = appState.user.firstName || appState.user.username;
+
+            const avatarEl = document.getElementById("userAvatar");
+            if (appState.user.photoUrl) {
+                avatarEl.innerHTML = `<img src="${appState.user.photoUrl}" alt="avatar">`;
+            } else {
+                avatarEl.textContent = (appState.user.firstName?.[0] || "?").toUpperCase();
+            }
+
+            if (appState.isAdmin) {
+                document.getElementById("adminBadge").style.display = "inline-block";
+            }
+        }
+
+        // Status
+        function updateStatus(message, isError = false) {
+            const bar = document.getElementById("statusBar");
+            if (isError) {
+                bar.className = "status-bar error-message";
+                bar.innerHTML = message;
+            } else {
+                bar.className = "status-bar";
+                bar.innerHTML = message;
+            }
+            console.log("[SEMAT]", message.replace(/<[^>]*>/g, ''));
+        }
+
+        // Fetch data
+        async function fetchData() {
+            try {
+                updateStatus('<span class="loading"></span> 📡 Загрузка данных...');
+                console.log("[SEMAT] API URL:", CONFIG.API_URL);
+
+                const response = await fetch(CONFIG.API_URL + "?t=" + Date.now(), {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                console.log("[SEMAT] HTTP статус:", response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("[SEMAT] ✅ Данные получены:", {
+                    boards: data.boards?.length || 0,
+                    schemas: data.schemas?.length || 0,
+                    messages: data.messages?.length || 0,
+                    admins: data.admins?.length || 0
+                });
+
+                appState.boards = data.boards || [];
+                appState.schemas = data.schemas || [];
+                appState.messages = data.messages || [];
+                appState.admins = data.admins || [];
+
+                // Check admin
+                if (appState.user?.username) {
+                    appState.isAdmin = appState.admins.some(a => 
+                        a.username?.toLowerCase() === appState.user.username.toLowerCase()
+                    );
+                    console.log("[SEMAT] Администратор:", appState.isAdmin);
+                }
+
+                updateStatus('✅ Подключено к Google Sheets');
+                displayContent();
+
+            } catch (error) {
+                console.error("[SEMAT] ❌ Ошибка:", error);
+                updateStatus(`❌ Ошибка: ${error.message}`, true);
+                displayEmpty();
+            }
+        }
+
+        // Display content
+        function displayContent() {
+            displayBoards();
+            displaySchemas();
+            displayMessages();
+        }
+
+        // Boards
+        function displayBoards() {
+            const container = document.getElementById("boardsList");
+            if (appState.boards.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>Нет платформ</div>';
+                return;
+            }
+            container.innerHTML = appState.boards.map(b => `
+                <div class="link-card" onclick="window.open('${b.url}', '_blank')">
+                    <div class="link-card-header">
+                        <div class="link-emoji">${b.emoji || '🔌'}</div>
+                        <div class="link-title">${b.title}</div>
+                    </div>
+                    <div class="link-description">${b.description || ''}</div>
+                </div>
+            `).join('');
+        }
+
+        // Schemas
+        function displaySchemas() {
+            const container = document.getElementById("schemasList");
+            if (appState.schemas.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>Нет схем</div>';
+                return;
+            }
+            container.innerHTML = appState.schemas.map(s => `
+                <div class="link-card" onclick="window.open('${s.url}', '_blank')">
+                    <div class="link-card-header">
+                        <div class="link-emoji">${s.emoji || '📊'}</div>
+                        <div class="link-title">${s.title}</div>
+                    </div>
+                    <div class="link-description">${s.description || ''}</div>
+                </div>
+            `).join('');
+        }
+
+        // Messages
+        function displayMessages() {
+            const container = document.getElementById("messagesList");
+            if (appState.messages.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div>Нет сообщений</div>';
+                return;
+            }
+            container.innerHTML = appState.messages.map(m => `
+                <div class="chat-message">
+                    <div class="message-avatar">${(m.username?.[0] || '?').toUpperCase()}</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-username">@${m.username}</span>
+                            <span class="message-time">${new Date(parseInt(m.timestamp)).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
+                        </div>
+                        <div class="message-text">${m.message}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Empty
+        function displayEmpty() {
+            document.getElementById("boardsList").innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div>Ошибка загрузки</div>';
+            document.getElementById("schemasList").innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div>Ошибка загрузки</div>';
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            try {
+                await fetch(CONFIG.API_URL, {
+                    method: "POST",
+                    mode: 'cors',
+                    headers: { 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        action: "addMessage",
+                        username: appState.user.username,
+                        message: msg
+                    })
+                });
+                input.value = "";
+                setTimeout(() => fetchData(), 500);
+            } catch (e) {
+                console.error("[SEMAT]", e);
+                alert("Ошибка отправки: " + e.message);
+            }
+        }
+
+        // Tabs
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById(`${tab.dataset.tab}-content`).classList.add("active");
+            });
+        });
+
+        // Buttons
+        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        document.getElementById("messageInput").addEventListener("keypress", e => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        // Init
+        async function init() {
+            console.log("╔════════════════════════════════════╗");
+            console.log("║      SEMAT E-HUB v1.0              ║");
+            console.log("╚════════════════════════════════════╝");
+            console.log("[SEMAT] API URL:", CONFIG.API_URL);
+            console.log("[SEMAT] Sheet ID:", CONFIG.SHEET_ID);
+
+            initTelegram();
+            await new Promise(r => setTimeout(r, 300));
+            await fetchData();
+
+            console.log("✅ ПРИЛОЖЕНИЕ ГОТОВО");
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
