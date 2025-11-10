@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SEMAT E-HUB</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.03;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            left: -150px;
+            animation-delay: 0s;
+            animation-duration: 25s;
+        }
+
+        .shape:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            right: -100px;
+            animation-delay: 5s;
+            animation-duration: 30s;
+        }
+
+        .shape:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            bottom: -125px;
+            left: 30%;
+            animation-delay: 10s;
+            animation-duration: 35s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(50px, -50px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-50px, 50px) rotate(240deg);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a2a2a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .connection-status {
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-top: 2px;
+        }
+
+        .status-ready {
+            color: #10b981;
+        }
+
+        .status-error {
+            color: #ef4444;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            position: sticky;
+            top: 65px;
+            z-index: 99;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #a0a0a0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            background: #2a2a2a;
+        }
+
+        .tab.active {
+            color: #6366f1;
+            border-bottom-color: #6366f1;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            background: #242424;
+            border-color: #3a3a3a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-emoji {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: #a0a0a0;
+            line-height: 1.5;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-edit {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #5558e3;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .btn-primary:hover {
+            background: #5558e3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Chat */
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+            max-height: calc(100vh - 350px);
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 3px;
+        }
+
+        .message {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message-info {
+            flex: 1;
+        }
+
+        .message-username {
+            font-weight: 600;
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: #d0d0d0;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message-delete {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .message-delete:hover {
+            background: #dc2626;
+        }
+
+        /* Chat Input */
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            padding: 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px 16px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .chat-input button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input button:hover {
+            background: #5558e3;
+        }
+
+        .chat-input button:disabled {
+            background: #3a3a3a;
+            cursor: not-allowed;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-save {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #5558e3;
+        }
+
+        .btn-cancel {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .btn-cancel:hover {
+            background: #3a3a3a;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid #2a2a2a;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error Message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 16px;
+            color: #ef4444;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+        }
+
+        .empty-state-emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .logo {
+                font-size: 16px;
+            }
+
+            .user-info {
+                font-size: 12px;
+            }
+
+            .user-avatar {
+                width: 28px;
+                height: 28px;
+            }
+
+            .tabs {
+                top: 57px;
+            }
+
+            .tab {
+                padding: 12px 8px;
+                font-size: 12px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-messages {
+                max-height: calc(100vh - 320px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span>🔌</span>
+                <span>SEMAT E-HUB</span>
+            </div>
+            <div class="user-info">
+                <div>
+                    <div id="username">Гость</div>
+                    <div class="connection-status" id="status">Подключение...</div>
+                </div>
+                <div class="user-avatar" id="userAvatar">
+                    <span>👤</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="resources">📚 Ресурсы</button>
+            <button class="tab" data-tab="schemes">⚡ Схемы</button>
+            <button class="tab" data-tab="chat">💬 Чат</button>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Resources Tab -->
+            <div class="tab-content active" id="resources">
+                <button class="btn-primary" id="addResourceBtn" style="display: none;">Добавить</button>
+                <div id="resourcesContent" class="cards-grid"></div>
+            </div>
+
+            <!-- Schemes Tab -->
+            <div class="tab-content" id="schemes">
+                <button class="btn-primary" id="addSchemeBtn" style="display: none;">Добавить</button>
+                <div id="schemesContent" class="cards-grid"></div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="tab-content" id="chat">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input">
+                    <input type="text" id="messageInput" placeholder="Напишите сообщение...">
+                    <button id="sendBtn">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">Добавить</div>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="itemTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>URL</label>
+                    <input type="url" id="itemUrl" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="itemDescription" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Эмодзи</label>
+                    <input type="text" id="itemEmoji" maxlength="2" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelBtn">Отмена</button>
+                    <button type="submit" class="btn-save">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        console.log('[App Init] Приложение запущено:', new Date().toISOString());
+
+        // Configuration
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzkTen_kZ0OEvRhAQ1MffccssA6mQoQIdpEnVgSsEzXHmagI6oojBmJAOFRioqAv1gkQw/exec';
+        const ADMIN_USERNAME = 'eee_h1';
+
+        // State
+        let currentUser = null;
+        let isAdmin = false;
+        let resources = [];
+        let schemes = [];
+        let messages = [];
+        let adminList = [];
+        let currentEditItem = null;
+        let currentEditType = null;
+
+        // Initialize Telegram WebApp
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            console.log('[Telegram] Инициализация Telegram WebApp');
+            tg.ready();
+            tg.expand();
+            
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                console.log('[Telegram] Данные пользователя получены:', user);
+                currentUser = {
+                    id: user.id,
+                    username: user.username || user.first_name || 'Пользователь',
+                    first_name: user.first_name || 'Пользователь',
+                    photo_url: user.photo_url || null
+                };
+                updateUserInfo();
+            } else {
+                console.log('[Telegram] Данные пользователя недоступны, используется тестовый режим');
+                // Test mode
+                currentUser = {
+                    id: 12345,
+                    username: 'eee_h1',
+                    first_name: 'Test User',
+                    photo_url: null
+                };
+                updateUserInfo();
+            }
+        } else {
+            console.log('[Telegram] Telegram WebApp API недоступен, используется тестовый режим');
+            // Fallback for testing outside Telegram
+            currentUser = {
+                id: 12345,
+                username: 'eee_h1',
+                first_name: 'Test User',
+                photo_url: null
+            };
+            updateUserInfo();
+        }
+
+        function updateUserInfo() {
+            const usernameEl = document.getElementById('username');
+            const avatarEl = document.getElementById('userAvatar');
+            
+            if (currentUser) {
+                usernameEl.textContent = currentUser.first_name;
+                
+                if (currentUser.photo_url) {
+                    avatarEl.innerHTML = `<img src="${currentUser.photo_url}" alt="Avatar">`;
+                } else {
+                    avatarEl.innerHTML = '<span>👤</span>';
+                }
+            }
+        }
+
+        // API Functions
+        async function fetchData() {
+            console.log('[API] Запрос данных от Google Sheets:', API_URL);
+            updateStatus('Подключение...');
+            
+            try {
+                const response = await fetch(`${API_URL}?action=getData`);
+                const data = await response.json();
+                
+                console.log('[API] Данные получены успешно:', data);
+                
+                resources = data.resources || [];
+                schemes = data.schemes || [];
+                messages = data.messages || [];
+                adminList = data.admin || [];
+                
+                checkAdminStatus();
+                renderAll();
+                updateStatus('✅ Готово', true);
+            } catch (error) {
+                console.error('[API Error] Ошибка загрузки данных:', error);
+                updateStatus('❌ Ошибка', false);
+                showError('Ошибка подключения к серверу');
+            }
+        }
+
+        async function addItem(type, item) {
+            console.log(`[API] Добавление ${type}:`, item);
+            
+            try {
+                const sheetName = type === 'resource' ? 'Платы' : 'Схемы';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'addItem',
+                        sheet: sheetName,
+                        data: item
+                    })
+                });
+                
+                console.log(`[API] ${type} добавлен успешно`);
+                
+                // Refresh data
+                setTimeout(() => fetchData(), 1000);
+            } catch (error) {
+                console.error(`[API Error] Ошибка добавления ${type}:`, error);
+                showError('Ошибка добавления элемента');
+            }
+        }
+
+        async function editItem(type, id, item) {
+            console.log(`[API] Редактирование ${type} ID ${id}:`, item);
+            
+            try {
+                const sheetName = type === 'resource' ? 'Платы' : 'Схемы';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'editItem',
+                        sheet: sheetName,
+                        id: id,
+                        data: item
+                    })
+                });
+                
+                console.log(`[API] ${type} отредактирован успешно`);
+                
+                // Refresh data
+                setTimeout(() => fetchData(), 1000);
+            } catch (error) {
+                console.error(`[API Error] Ошибка редактирования ${type}:`, error);
+                showError('Ошибка редактирования элемента');
+            }
+        }
+
+        async function deleteItem(type, id) {
+            console.log(`[API] Удаление ${type} ID ${id}`);
+            
+            if (!confirm('Вы уверены, что хотите удалить этот элемент?')) {
+                return;
+            }
+            
+            try {
+                const sheetName = type === 'resource' ? 'Платы' : 'Схемы';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'deleteItem',
+                        sheet: sheetName,
+                        id: id
+                    })
+                });
+                
+                console.log(`[API] ${type} удален успешно`);
+                
+                // Refresh data
+                setTimeout(() => fetchData(), 1000);
+            } catch (error) {
+                console.error(`[API Error] Ошибка удаления ${type}:`, error);
+                showError('Ошибка удаления элемента');
+            }
+        }
+
+        async function sendMessage(text) {
+            console.log('[API] Отправка сообщения:', text);
+            
+            if (!currentUser) {
+                console.error('[Chat] Пользователь не определен');
+                return;
+            }
+            
+            try {
+                const message = {
+                    timestamp: new Date().toISOString(),
+                    username: currentUser.username,
+                    message: text,
+                    avatar: currentUser.photo_url || ''
+                };
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'addMessage',
+                        data: message
+                    })
+                });
+                
+                console.log('[API] Сообщение отправлено успешно');
+                
+                // Add message locally for immediate feedback
+                messages.push(message);
+                renderMessages();
+                
+                // Refresh data
+                setTimeout(() => fetchData(), 1000);
+            } catch (error) {
+                console.error('[API Error] Ошибка отправки сообщения:', error);
+                showError('Ошибка отправки сообщения');
+            }
+        }
+
+        async function deleteMessage(timestamp) {
+            console.log('[API] Удаление сообщения:', timestamp);
+            
+            if (!confirm('Вы уверены, что хотите удалить это сообщение?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'deleteMessage',
+                        timestamp: timestamp
+                    })
+                });
+                
+                console.log('[API] Сообщение удалено успешно');
+                
+                // Refresh data
+                setTimeout(() => fetchData(), 1000);
+            } catch (error) {
+                console.error('[API Error] Ошибка удаления сообщения:', error);
+                showError('Ошибка удаления сообщения');
+            }
+        }
+
+        // UI Functions
+        function updateStatus(text, success = null) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = text;
+            statusEl.className = 'connection-status';
+            
+            if (success === true) {
+                statusEl.classList.add('status-ready');
+            } else if (success === false) {
+                statusEl.classList.add('status-error');
+            }
+        }
+
+        function checkAdminStatus() {
+            if (currentUser) {
+                isAdmin = adminList.some(admin => 
+                    admin.Username === currentUser.username && 
+                    admin.Permissions === 'edit' && 
+                    admin.Active === 'true'
+                );
+                
+                console.log('[Admin] Статус администратора:', isAdmin, 'для пользователя:', currentUser.username);
+                
+                // Show/hide admin buttons
+                document.getElementById('addResourceBtn').style.display = isAdmin ? 'block' : 'none';
+                document.getElementById('addSchemeBtn').style.display = isAdmin ? 'block' : 'none';
+            }
+        }
+
+        function renderAll() {
+            renderResources();
+            renderSchemes();
+            renderMessages();
+        }
+
+        function renderResources() {
+            const container = document.getElementById('resourcesContent');
+            
+            if (resources.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-emoji">📚</div>
+                        <div class="empty-state-text">Пока нет ресурсов</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = resources.map(item => `
+                <div class="card" onclick="openLink('${item.URL}')">
+                    <div class="card-header">
+                        <div class="card-emoji">${item.Emoji || '📄'}</div>
+                        <div class="card-title">${item.Title}</div>
+                    </div>
+                    <div class="card-description">${item.Description}</div>
+                    ${isAdmin ? `
+                        <div class="card-actions">
+                            <button class="btn-small btn-edit" onclick="event.stopPropagation(); editResource('${item.ID}')">Редактировать</button>
+                            <button class="btn-small btn-delete" onclick="event.stopPropagation(); deleteItem('resource', '${item.ID}')">Удалить</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderSchemes() {
+            const container = document.getElementById('schemesContent');
+            
+            if (schemes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-emoji">⚡</div>
+                        <div class="empty-state-text">Пока нет схем</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = schemes.map(item => `
+                <div class="card" onclick="openLink('${item.URL}')">
+                    <div class="card-header">
+                        <div class="card-emoji">${item.Emoji || '⚡'}</div>
+                        <div class="card-title">${item.Title}</div>
+                    </div>
+                    <div class="card-description">${item.Description}</div>
+                    ${isAdmin ? `
+                        <div class="card-actions">
+                            <button class="btn-small btn-edit" onclick="event.stopPropagation(); editScheme('${item.ID}')">Редактировать</button>
+                            <button class="btn-small btn-delete" onclick="event.stopPropagation(); deleteItem('scheme', '${item.ID}')">Удалить</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-emoji">💬</div>
+                        <div class="empty-state-text">Пока нет сообщений</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = messages.map(msg => {
+                const time = formatTime(msg.Timestamp);
+                const avatarHtml = msg.Avatar ? 
+                    `<img src="${msg.Avatar}" alt="Avatar">` : 
+                    '<span>👤</span>';
+                
+                return `
+                    <div class="message">
+                        <div class="message-header">
+                            <div class="message-avatar">${avatarHtml}</div>
+                            <div class="message-info">
+                                <div class="message-username">${msg.Username}</div>
+                                <div class="message-time">${time}</div>
+                            </div>
+                            ${isAdmin ? `
+                                <button class="message-delete" onclick="deleteMessage('${msg.Timestamp}')">Удалить</button>
+                            ` : ''}
+                        </div>
+                        <div class="message-text">${escapeHtml(msg.Message)}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            // If less than 24 hours, show time
+            if (diff < 24 * 60 * 60 * 1000) {
+                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Otherwise show date
+            return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+
+        function showError(message) {
+            // You can implement a toast notification here
+            console.error('[Error]', message);
+            alert(message);
+        }
+
+        function openModal(type, item = null) {
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('itemForm');
+            
+            currentEditType = type;
+            currentEditItem = item;
+            
+            if (item) {
+                title.textContent = 'Редактировать';
+                document.getElementById('itemTitle').value = item.Title;
+                document.getElementById('itemUrl').value = item.URL;
+                document.getElementById('itemDescription').value = item.Description;
+                document.getElementById('itemEmoji').value = item.Emoji;
+            } else {
+                title.textContent = 'Добавить';
+                form.reset();
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+            currentEditType = null;
+            currentEditItem = null;
+        }
+
+        function editResource(id) {
+            const item = resources.find(r => r.ID === id);
+            if (item) {
+                openModal('resource', item);
+            }
+        }
+
+        function editScheme(id) {
+            const item = schemes.find(s => s.ID === id);
+            if (item) {
+                openModal('scheme', item);
+            }
+        }
+
+        // Event Listeners
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(targetTab).classList.add('active');
+                
+                console.log('[UI] Переключение на вкладку:', targetTab);
+            });
+        });
+
+        document.getElementById('addResourceBtn').addEventListener('click', () => {
+            openModal('resource');
+        });
+
+        document.getElementById('addSchemeBtn').addEventListener('click', () => {
+            openModal('scheme');
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            closeModal();
+        });
+
+        document.getElementById('itemForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const item = {
+                Title: document.getElementById('itemTitle').value,
+                URL: document.getElementById('itemUrl').value,
+                Description: document.getElementById('itemDescription').value,
+                Emoji: document.getElementById('itemEmoji').value
+            };
+            
+            if (currentEditItem) {
+                // Edit existing item
+                editItem(currentEditType, currentEditItem.ID, item);
+            } else {
+                // Add new item
+                addItem(currentEditType, item);
+            }
+            
+            closeModal();
+        });
+
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (text) {
+                sendMessage(text);
+                input.value = '';
+            }
+        });
+
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('sendBtn').click();
+            }
+        });
+
+        // Click outside modal to close
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+        // Initialize app
+        console.log('[App] Загрузка данных...');
+        fetchData();
+
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            console.log('[App] Автоматическое обновление данных');
+            fetchData();
+        }, 30000);
+    </script>
+</body>
+</html>
